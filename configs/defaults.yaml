@@ -1,0 +1,9 @@
+---
+defaults:
+    - env : halfcheetah
+    - info: ${env}
+    - args : ${env}
+    - wandb: defaults
+    - hydra: defaults
+policy : bc
+seed : 42

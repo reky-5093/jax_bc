@@ -1,48 +1,28 @@
 import os
 import json
-import argparse
-
-import gym
+import pprint
+import hydra
+import hydra.utils
+import omegaconf
 import d4rl
-
 import numpy as np
 import pickle as pkl
-
-from jaxbc.modules.trainer import BCTrainer,OnlineBCTrainer
-from jaxbc.buffers.d4rlbuffer import d4rlBuffer
-from jaxbc.buffers.rlbenchbuffer import RlbenchStateBuffer
 from jaxbc.utils.jaxbc_utils import yielding
+from jaxbc.modules.trainer import BCTrainer,OnlineBCTrainer
+import envs.env_set 
 
-from envs.common import set_env
-def main(args):
- 
-    ### train info ###
-    env_name, task_name = args.task.split('-')
-    policy_name = args.policy
-    print(f"train info -> task: {task_name} | policy: {policy_name} ")
-    
-    ### config file ###
-    json_fname = task_name + '_' + policy_name
-    config_filepath = os.path.join('configs',env_name,json_fname+'.json')
-    with open(config_filepath) as f:
-        cfg = json.load(f)
-    
+
+
+@hydra.main(config_path="configs", config_name="defaults")
+def run_experiment(cfg: omegaconf.DictConfig) -> None:
+    pprint.pprint(cfg)
     ### env ###
-    env = set_env(cfg)
-   
-    if cfg['env_name'] == "d4rl":
-        # env = gym.make(cfg['task_name'])
-        cfg['observation_dim'] = env.observation_space.shape
-        cfg['action_dim'] = int(np.prod(env.action_space.shape))
-
-        episodes = d4rl.sequence_dataset(env)
-        episodes = list(yielding(episodes))
-        # observation -> type: numpy.ndarray, shape: (timestep,state)
-
-        replay_buffer = d4rlBuffer(cfg,env=env)
-        replay_buffer.add_episodes_from_d4rl(episodes)
-
-    elif cfg['env_name'] == "rlbench":
+    functions = getattr(envs.env_set , f'set_{cfg.env.env_name}')(cfg)
+    replay_buffer, env = functions.make_env()
+    cfg.args.observation_dim = env.observation_space.shape
+    cfg.args.action_dim = int(np.prod(env.action_space.shape))
+    '''
+    if cfg['env_name'] == "rlbench":
 
         # cfg['observation_dim'] = 512 + int(np.prod(env.observation_space['state'].shape)) # visualk feature size + state
         # cfg['observation_dim'] = int(np.prod(env.observation_space['state'].shape)) 
@@ -89,29 +69,12 @@ def main(args):
 
         replay_buffer = RlbenchStateBuffer(cfg,env=env)
         replay_buffer.add_episodes_from_rlbench(episodes)
-
-
+    '''
     trainer = BCTrainer(cfg=cfg)
-
-
+    
     # train
     trainer.run(replay_buffer,env)
+    
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    # Main Args
-    
-    parser.add_argument(
-        "--task",type=str, default="d4rl-halfcheetah",
-        choices=['d4rl-halfcheetah','d4rl-hopper','rlbench-pick_and_lift_simple'],
-        required=True)
-
-    parser.add_argument(
-        "--policy",type=str, default="bc",
-        choices=['bc'],
-        required=True)
-    
-    args = parser.parse_args()
-    main(args)
-
-
+    run_experiment()

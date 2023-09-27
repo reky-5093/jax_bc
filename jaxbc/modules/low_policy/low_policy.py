@@ -23,8 +23,8 @@ class MLPpolicy():
             cfg: Dict,
             init_build_model: bool = True
     ):
-        self.observation_dim = cfg['policy_args']['observation_dim']
-        self.seed = cfg['seed']
+        self.observation_dim = cfg.args.observation_dim
+        self.seed = cfg.seed
         self.cfg = cfg
 
         self.rng = jax.random.PRNGKey(self.seed)
@@ -45,16 +45,16 @@ class MLPpolicy():
     def build_model(self):
 
         act_scale = False
-        action_dim = self.cfg['policy_args']['action_dim']
+        action_dim = self.cfg.args.action_dim
         # net_arch = [256]*4
-        net_arch = self.cfg['policy_args']['architecture']
+        net_arch = self.cfg.args.architecture
         activation_fn = nn.relu
         dropout = 0.0
-        squash_output = self.cfg['policy_args']['tanh_action']
+        squash_output = self.cfg.args.tanh_action
         layer_norm = False
 
-        if self.cfg['policy_args']['feature_extractor']:
-            if self.cfg['policy_args']['feature_extractor'] == 'resnet18':
+        if self.cfg.args.feature_extractor:
+            if self.cfg.args.feature_extractor == 'resnet18':
                 mlp = PrimRN18MLP(
                     act_scale=act_scale,
                     output_dim=action_dim,
@@ -81,7 +81,7 @@ class MLPpolicy():
 
         self.rng = rng
         rngs = {"params": param_key, "dropout": dropout_key, "batch_stats": batch_key}
-        tx = optax.adam(self.cfg['info']["lr"])
+        tx = optax.adam(self.cfg.info.lr)
         self.model = Model.create(model_def=mlp, inputs=[rngs, init_obs], tx=tx)
 
     def update(self, replay_data):
@@ -141,7 +141,7 @@ class MLPpolicy():
     ) -> Dict:
         observations = replay_data.observations
         actions = replay_data.actions[:, -1, ...]
-        if self.cfg["use_optimal_lang"]:
+        if self.cfg.use_optimal_lang:
             raise NotImplementedError("Obsolete")
         maskings = replay_data.maskings[:, -1]
 

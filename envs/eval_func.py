@@ -1,4 +1,4 @@
-import RLBench.rlbench.gym
+#import RLBench.rlbench.gym
 from PIL import Image
 import cv2
 import numpy as np

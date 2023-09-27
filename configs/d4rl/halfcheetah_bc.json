@@ -16,18 +16,20 @@
         "batch_size" : 256,
         "buffer_size": 1e10,
         "subseq_len": 1,
+        "record_video" : false,
 
         "eval_episodes": 3,
 
         "weights_path": "weights/halfcheetah_bc",
         "log_interval": 1e4,
         "save_interval": 1e4,
-        "eval_interval": 1e4
+        "eval_interval": 1e4,
+        "save_path" : "weights/halfcheetah_bc"
 
     },
 
     "wandb":{
         "record": true,
-        "entity": "andykim0723"
+        "entity": "yskang"
     }
 }

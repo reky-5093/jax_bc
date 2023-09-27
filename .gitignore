@@ -2,6 +2,7 @@ weights/
 results/
 wandb/
 data/
+outputs/
 
 
 *.png

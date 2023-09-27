@@ -4,7 +4,7 @@ import wandb
 import numpy as np
 from typing import Dict
 from datetime import datetime
-
+from omegaconf import OmegaConf
 from jaxbc.modules.low_policy.low_policy import MLPpolicy
 from jaxbc.utils.common import save_video
 from envs.eval_func import d4rl_evaluate,rlbench_evaluate
@@ -20,13 +20,14 @@ class BCTrainer():
         self,
         cfg: Dict,
     ):
-        self.cfg = cfg
-        self.batch_size = cfg['info']['batch_size']
-
+        self.config = cfg
+        self.prepare_run()
+        self.batch_size = self.config.info.batch_size
+        save_path = os.path.join('weights',f"{self.config.env.task_name}_{self.config.policy}")
         # string to model
-        task_name = cfg['task_name']
-        policy_name = cfg['policy']
-        self.save_path= os.path.join(cfg['info']['save_path'],f"{task_name}_{policy_name}")
+        task_name = self.config.env.task_name
+        policy_name = self.config.policy
+        self.save_path= os.path.join(save_path,f"{task_name}_{policy_name}")
         if policy_name == "bc":
             self.low_policy = MLPpolicy(cfg=cfg)
 
@@ -34,25 +35,25 @@ class BCTrainer():
         self.eval_rewards = []
         self.success_rates = []
 
-        self.train_steps = cfg['info']['train_steps']
-        self.eval_episodes = self.cfg['info']['eval_episodes']
-        self.eval_env = cfg['env_name']
+        self.train_steps = self.config.info.train_steps
+        self.eval_episodes = self.config.info.eval_episodes
+        self.eval_env = self.config.env.env_name
 
-        self.log_interval = cfg['info']['log_interval']
-        self.save_interval = cfg['info']['save_interval']
-        self.eval_interval = cfg['info']['eval_interval']
+        self.log_interval = self.config.info.log_interval
+        self.save_interval = self.config.info.save_interval
+        self.eval_interval = self.config.info.eval_interval
         self.weights_path = os.path.join(self.save_path,"weights") 
         self.log_path = os.path.join(self.save_path,"logs") 
-        self.video_path = os.path.join(self.save_path,"videos") if cfg['info']['record_video'] else None
+        self.video_path = os.path.join(self.save_path,"videos") if self.config.info.record_video else None
         
         os.makedirs(self.weights_path, exist_ok=True)
         os.makedirs(self.log_path, exist_ok=True)
         if self.video_path:
             os.makedirs(self.video_path, exist_ok=True)
     
-        self.wandb_record =  cfg['wandb']['record']
+        self.wandb_record =  self.config.wandb.record
 
-        self.prepare_run()
+        
 
     def run(self,replay_buffer,env):  
         #
@@ -115,11 +116,7 @@ class BCTrainer():
                     print("saving: ",file_name)
                     save_video(video_path,v)
             return success_rate
-        
-
-
-        
-
+    
     def save(self,path):
         # date_time = datetime.now().strftime('%m-%d_%H:%M')
         save_path = os.path.join(self.weights_path,path)
@@ -144,19 +141,21 @@ class BCTrainer():
 
     def prepare_run(self):
         self.start = datetime.now()
-        
-        env_name = self.cfg['env_name']
-        task_name = self.cfg['task_name'].split('-')[0]  
-        policy_name = self.cfg['policy']
+
+        env_name = self.config.env.env_name
+        task_name = str(self.config.env.task_name).split('-')[0]  
+        policy_name = self.config.policy
+        wandb_cfg = OmegaConf.to_container(
+        self.config, resolve=True, throw_on_missing=True
+        )
 
         project = env_name+ '_' + task_name  
         name = task_name + '_' + policy_name
-        if self.wandb_record:
-            self.wandb_logger = wandb.init(
+        self.wandb_logger = wandb.init(
                 project=project,
                 name=name,
-                entity=self.cfg["wandb"]["entity"],
-                config=self.cfg,
+                entity=self.config.wandb.entity,
+                config=wandb_cfg,
             )
 
 

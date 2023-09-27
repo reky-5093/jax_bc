@@ -1,0 +1,6 @@
+---
+feature_extractor : false
+architecture : [400,300]
+tanh_action : true
+observation_dim : None
+action_dim : None
