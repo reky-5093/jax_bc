@@ -1,0 +1,9 @@
+---
+architecture : [400,300]
+tanh_action : true
+data_path : /home/kangys/SkillGrounding/data/pick_and_lift_block2
+model_type : PrimRN18MLP
+data_type : image
+observation_dim : [29]
+action_dim : !!int 10
+image_dim : [224,224,3]

@@ -65,7 +65,7 @@ EndSection
     output =  "\n".join(xorg_conf)
     return output
 
-def startx(display=2):
+def startx(display=0):
     if platform.system() != "Linux":
         raise Exception("Can only run startx on linux")
 

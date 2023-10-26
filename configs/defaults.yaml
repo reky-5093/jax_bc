@@ -1,8 +1,8 @@
 ---
 defaults:
-    - env : halfcheetah
-    - info: ${env}
-    - args : ${env}
+    - env : pick_and_lift
+    - parameter: ${env}
+    - model : ${env}
     - wandb: defaults
     - hydra: defaults
 policy : bc

@@ -1,11 +1,10 @@
 import os
 import gym
-import d4rl # need this for gym env creation
 import json
 import argparse
 import numpy as np
 
-from jaxbc.modules.low_policy.low_policy import MLPpolicy
+from workspace.jax_bc.jaxbc.modules.low_policy.mlp_policy import MLPpolicy
 from envs.eval_func import d4rl_evaluate
 
 def main(args):

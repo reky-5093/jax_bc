@@ -4,8 +4,6 @@ from typing import Dict, Optional, Union, Tuple, List
 
 import h5py
 import numpy as np
-from jax.tree_util import tree_map
-# from stable_baselines3.common.vec_env import VecNormalize
 
 from jaxbc.buffers.base import BaseBuffer
 from gym import spaces
@@ -30,7 +28,7 @@ class RlbenchStateBuffer(BaseBuffer):
         # action_space = env.action_space
 
         self.env = env
-        self.buffer_size = cfg['info']['buffer_size']
+        self.buffer_size = cfg.parameter.buffer_size
               
         if env is None:
             self.observation_space = None
@@ -46,14 +44,12 @@ class RlbenchStateBuffer(BaseBuffer):
             self.action_dim = int(np.prod(self.action_space.shape))
         
         # state only version
-        self.observation_dim = cfg['policy_args']['observation_dim']
-        self.action_dim = cfg['policy_args']['action_dim'] 
-
+        self.image_dim = None
         self.pos = 0
         self.full = False
         self.n_envs = n_envs
 
-        self.subseq_len = cfg['info']['subseq_len']
+        self.subseq_len = cfg.parameter.subseq_len
         self.episodes = []  # type: List[Episode]
         self.episode_lengths = []
 
@@ -111,8 +107,8 @@ class RlbenchStateBuffer(BaseBuffer):
     def add_episodes_from_rlbench(
         self,
         episodes
-    ):    
-
+    ):
+        dummy_img = np.expand_dims(self.image_dim,axis=0)
         dummy_obs = np.expand_dims(np.zeros(shape=self.observation_dim),axis=0)
         dummy_action = np.expand_dims(np.zeros(shape=self.action_dim),axis=0)        
         dummy_common = np.expand_dims(np.zeros(shape=(1,)),axis=0)

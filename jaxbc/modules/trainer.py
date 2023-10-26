@@ -1,13 +1,13 @@
 import os
-import cv2
 import wandb
 import numpy as np
-from typing import Dict
+import sys
+from typing import Dict, Any
 from datetime import datetime
 from omegaconf import OmegaConf
-from jaxbc.modules.low_policy.low_policy import MLPpolicy
+from jaxbc.modules.low_policy.BC_policy import BCpolicy , Image_BCpolicy
 from jaxbc.utils.common import save_video
-from envs.eval_func import d4rl_evaluate,rlbench_evaluate
+from envs.eval_func import d4rl_evaluate,rlbench_evaluate,rlbench_image_evaluate
 
 class OnlineBCTrainer():
     pass
@@ -22,29 +22,27 @@ class BCTrainer():
     ):
         self.config = cfg
         self.prepare_run()
-        self.batch_size = self.config.info.batch_size
+        self.batch_size = self.config.parameter.batch_size
         save_path = os.path.join('weights',f"{self.config.env.task_name}_{self.config.policy}")
         # string to model
         task_name = self.config.env.task_name
         policy_name = self.config.policy
         self.save_path= os.path.join(save_path,f"{task_name}_{policy_name}")
-        if policy_name == "bc":
-            self.low_policy = MLPpolicy(cfg=cfg)
-
+        self.low_policy = Image_BCpolicy(cfg=cfg)
         self.n_update = 0
         self.eval_rewards = []
         self.success_rates = []
 
-        self.train_steps = self.config.info.train_steps
-        self.eval_episodes = self.config.info.eval_episodes
+        self.train_steps = self.config.parameter.train_steps
+        self.eval_episodes = self.config.parameter.eval_episodes
         self.eval_env = self.config.env.env_name
 
-        self.log_interval = self.config.info.log_interval
-        self.save_interval = self.config.info.save_interval
-        self.eval_interval = self.config.info.eval_interval
+        self.log_interval = self.config.parameter.log_interval
+        self.save_interval = self.config.parameter.save_interval
+        self.eval_interval = self.config.parameter.eval_interval
         self.weights_path = os.path.join(self.save_path,"weights") 
         self.log_path = os.path.join(self.save_path,"logs") 
-        self.video_path = os.path.join(self.save_path,"videos") if self.config.info.record_video else None
+        self.video_path = os.path.join(self.save_path,"videos") if self.config.parameter.record_video else None
         
         os.makedirs(self.weights_path, exist_ok=True)
         os.makedirs(self.log_path, exist_ok=True)
@@ -61,6 +59,7 @@ class BCTrainer():
             replay_data = replay_buffer.sample(batch_size = self.batch_size)
             # actions = np.squeeze(np.array([rep['actions'] for rep in replay_data]))
             info = self.low_policy.update(replay_data)
+
             self.n_update += 1
 
             if (self.n_update % self.log_interval) == 0:
@@ -103,7 +102,7 @@ class BCTrainer():
             rewards = d4rl_evaluate(env,self.low_policy,self.eval_episodes)
             return rewards
         elif self.eval_env == "rlbench":
-            success_rate,frames = rlbench_evaluate(env,self.low_policy,self.eval_episodes)
+            success_rate,frames = rlbench_image_evaluate(env,self.low_policy,self.eval_episodes)
             if self.video_path:
                 height, width, layers  = list(frames.values())[0][0].shape
                 size = (width,height)

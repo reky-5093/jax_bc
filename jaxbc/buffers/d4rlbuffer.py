@@ -29,7 +29,7 @@ class d4rlBuffer(BaseBuffer):
         # action_space = env.action_space
 
         self.env = env
-        self.buffer_size = cfg['info']['buffer_size']
+        self.buffer_size = cfg.parameter.buffer_size
               
         if env is None:
             self.observation_space = None
@@ -49,7 +49,7 @@ class d4rlBuffer(BaseBuffer):
         self.full = False
         self.n_envs = n_envs
 
-        self.subseq_len = cfg['info']['subseq_len']
+        self.subseq_len = cfg.parameter.subseq_len
         self.episodes = []  # type: List[Episode]
         self.episode_lengths = []
 
@@ -115,6 +115,7 @@ class d4rlBuffer(BaseBuffer):
         # 'rewards', 'terminals'
         # preprocess data and add it to buffer
         for episode in episodes:
+            print(episode)
             episode['obs'] = episode.pop('observations')
             episode['next_obs'] = np.concatenate((episode['obs'][1:],dummy_obs))
 

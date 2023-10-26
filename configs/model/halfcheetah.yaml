@@ -1,0 +1,6 @@
+---
+architecture : [400,300]
+tanh_action : true
+data_path : None
+data_type : None
+model_type : MLP
